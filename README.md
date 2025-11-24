@@ -10,6 +10,8 @@ For now, we've used this on the DistilGPT2 and the GPT2 models, since they are r
 
 **[View Live Application](https://huggingface.co/spaces/Jog-sama/xai-attention-visualize)**
 
+(refresh the window before every new prompt)
+
 ## What This Does
 
 Ever wonder how LLMs confidently spew out complete nonsense? This tool visualizes what's happening under the hood. When a model generates text, it pays attention to different tokens with varying intensities. Hallucinated text has a different attention signature than well-grounded responses.
