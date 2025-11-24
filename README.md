@@ -8,7 +8,7 @@ For now, we've used this on the DistilGPT2 and the GPT2 models, since they are r
 
 ## Live Demo
 
-**[View Live Application](https://attention-hallucination-detector-llms.onrender.com)**
+**[View Live Application](https://huggingface.co/spaces/Jog-sama/xai-attention-visualize)**
 
 ## What This Does
 
@@ -85,7 +85,7 @@ That's it. Render will install FFmpeg automatically using `apt-packages.txt`.
 
 **Note:** The free tier spins down after inactivity. First request after idle might take 30-60 seconds to wake up.
 
-**Live Demo also available on:** https://huggingface.co/spaces/YOURUSERNAME/xai-attention-visualizer
+**Live Demo also available on:** https://huggingface.co/spaces/Jog-sama/xai-attention-visualize
 
 ## How It Works
 
