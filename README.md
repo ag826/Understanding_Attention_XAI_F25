@@ -6,6 +6,8 @@ This project analyzes attention patterns in transformer models to detect halluci
 
 For now, we've used this on the DistilGPT2 and the GPT2 models, since they are relatively smaller and faster to run and demonstrate. 
 
+### Please refer to app.py for the main code file
+
 ## Live Demo
 
 **[View Live Application](https://huggingface.co/spaces/Jog-sama/xai-attention-visualize)**
