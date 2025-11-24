@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Attention Visualizer - XAI Project</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c2c2c 0%, #3a3a3a 100%);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            color: #4a9eff;
+        }
+
+        .header p {
+            color: #b0b0b0;
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 1px solid #3a3a3a;
+        }
+
+        .card h2 {
+            color: #4a9eff;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            border-bottom: 2px solid #3a3a3a;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #b0b0b0;
+        }
+
+        textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        textarea:focus, select:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+
+        button {
+            background: linear-gradient(135deg, #4a9eff 0%, #357abd 100%);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #4a9eff;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #3a3a3a;
+            border-top: 4px solid #4a9eff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            display: none;
+            background: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .result-card {
+            display: none;
+        }
+
+        .result-card.active {
+            display: block;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 8px;
+            background: #1a1a1a;
+        }
+
+        .token {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .token.high-importance {
+            background: #2d5016;
+            color: #8bc34a;
+            border: 2px solid #8bc34a;
+        }
+
+        .token.medium-importance {
+            background: #5a4a1a;
+            color: #ffb74d;
+            border: 2px solid #ffb74d;
+        }
+
+        .token.low-importance {
+            background: #4a1a1a;
+            color: #ff6b6b;
+            border: 2px dashed #ff6b6b;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #3a3a3a;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4a9eff;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #b0b0b0;
+            font-size: 0.95em;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .risk-badge.low {
+            background: #2d5016;
+            color: #8bc34a;
+        }
+
+        .risk-badge.medium {
+            background: #5a4a1a;
+            color: #ffb74d;
+        }
+
+        .risk-badge.high {
+            background: #4a1a1a;
+            color: #ff6b6b;
+        }
+
+        .report-section {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #4a9eff;
+        }
+
+        .report-section h3 {
+            color: #4a9eff;
+            margin-bottom: 12px;
+        }
+
+        .report-section ul {
+            list-style-position: inside;
+            color: #b0b0b0;
+        }
+
+        .report-section ul li {
+            margin: 8px 0;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .download-btn {
+            background: #3a3a3a;
+            color: #e0e0e0;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.95em;
+        }
+
+        .download-btn:hover {
+            background: #4a4a4a;
+        }
+
+        .token-by-token {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+
+        .gen-step {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            background: #2a2a2a;
+            border-radius: 6px;
+        }
+
+        .gen-step.low {
+            border-left: 4px solid #8bc34a;
+        }
+
+        .gen-step.medium {
+            border-left: 4px solid #ffb74d;
+        }
+
+        .gen-step.high {
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .gen-token {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            min-width: 100px;
+            color: #e0e0e0;
+        }
+
+        .gen-entropy {
+            margin-left: 20px;
+            color: #b0b0b0;
+        }
+
+        .gen-level {
+            margin-left: 20px;
+            font-weight: bold;
+        }
+
+        .gen-level.low {
+            color: #8bc34a;
+        }
+
+        .gen-level.medium {
+            color: #ffb74d;
+        }
+
+        .gen-level.high {
+            color: #ff6b6b;
+        }
+
+        .hint {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Why LLMs Hallucinate: Attention Analysis</h1>
+            <p>Explaining the Roots of False Confidence Through Attention Visualization</p>
+        </div>
+
+        <div class="card">
+            <h2>Input Text</h2>
+            <form id="analyzeForm">
+                <div class="form-group">
+                    <label for="inputText">Enter a sentence or question:</label>
+                    <textarea id="inputText" name="text" placeholder="humans have 5 hands" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="modelSelect">Select Model:</label>
+                    <select id="modelSelect" name="model">
+                        <option value="distilgpt2">DistilGPT2 (Fast)</option>
+                        <option value="gpt2">GPT2 (Standard)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="modeSelect">Analysis Mode:</label>
+                    <select id="modeSelect" name="mode">
+                        <option value="input">Analyze Input Text (Fast)</option>
+                        <option value="generate">Generate Response & Analyze (Detects Hallucinations)</option>
+                    </select>
+                    <p class="hint">💡 Use "Generate Response" mode to detect hallucinations in model-generated text</p>
+                </div>
+
+                <button type="submit" id="analyzeBtn">Analyze Attention Patterns</button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing attention patterns...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="card result-card" id="videoCard">
+                <h2>Attention Evolution Video</h2>
+                <video id="attentionVideo" controls></video>
+                <button class="download-btn" id="downloadBtn">Download Video</button>
+            </div>
+
+            <div class="card result-card" id="tokenCard">
+                <h2>Token Importance Analysis</h2>
+                <p style="margin-bottom: 15px; color: #b0b0b0;">
+                    Tokens color-coded by influence: <span style="color: #8bc34a;">High</span>, 
+                    <span style="color: #ffb74d;">Medium</span>, 
+                    <span style="color: #ff6b6b;">Low (Potential Issue)</span>
+                </p>
+                <div id="tokenDisplay"></div>
+            </div>
+
+            <div class="card result-card" id="driftCard">
+                <h2>Attention Drift Analysis</h2>
+                <p style="color: #b0b0b0; margin-bottom: 15px;">How attention patterns change across layers:</p>
+                <div id="driftDisplay"></div>
+            </div>
+
+            <div class="card result-card" id="statsCard">
+                <h2>Attention Statistics</h2>
+                <div class="stats-grid" id="statsDisplay"></div>
+            </div>
+
+            <div class="card result-card" id="riskCard">
+                <h2>Hallucination Risk Analysis</h2>
+                <div id="riskDisplay"></div>
+            </div>
+
+            <div class="card result-card full-width" id="summaryCard">
+                <h2>📊 Summary Report</h2>
+                <div id="summaryDisplay"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentVideoUrl = null;
+
+        const form = document.getElementById('analyzeForm');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resultCards = document.querySelectorAll('.result-card');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            loading.classList.add('active');
+            error.classList.remove('active');
+            analyzeBtn.disabled = true;
+            resultCards.forEach(card => card.classList.remove('active'));
+
+            const formData = {
+                text: document.getElementById('inputText').value,
+                model: document.getElementById('modelSelect').value,
+                mode: document.getElementById('modeSelect').value
+            };
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    throw new Error(data.error || 'Analysis failed');
+                }
+
+            } catch (err) {
+                console.error('Error:', err);
+                error.textContent = `Error: ${err.message}`;
+                error.classList.add('active');
+            } finally {
+                loading.classList.remove('active');
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+            resultCards.forEach(card => card.classList.add('active'));
+
+            // generated text if in generate mode
+            if (data.generation_info && data.generation_info.mode === 'generate') {
+                const genInfo = document.createElement('div');
+                genInfo.className = 'card full-width';
+                
+                let stepByStepHTML = '';
+                if (data.generation_info.generation_steps && data.generation_info.generation_steps.length > 0) {
+                    stepByStepHTML = `
+                        <h3 style="margin-top: 20px; color: #4a9eff;">🔍 Token-by-Token Generation Analysis</h3>
+                        <p style="color: #b0b0b0; margin-bottom: 15px;">Watch how attention entropy changes as each token is generated:</p>
+                        <div class="token-by-token">
+                    `;
+                    
+                    data.generation_info.generation_steps.forEach((step, idx) => {
+                        const entropyClass = step.entropy > 3.0 ? 'high' : step.entropy > 2.0 ? 'medium' : 'low';
+                        
+                        stepByStepHTML += `
+                            <div class="gen-step ${entropyClass}">
+                                <span class="gen-token">${escapeHtml(step.token)}</span>
+                                <span class="gen-entropy">Entropy: ${step.entropy.toFixed(3)}</span>
+                                <span class="gen-level ${entropyClass}">${entropyClass.toUpperCase()}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    stepByStepHTML += `</div>`;
+                }
+                
+                genInfo.innerHTML = `
+                    <h2>🤖 Model Generated Response</h2>
+                    <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; border-left: 4px solid #4a9eff;">
+                        <p style="margin: 0;"><strong>Your Prompt:</strong> ${escapeHtml(data.generation_info.prompt)}</p>
+                        <p style="margin: 10px 0 0 0;"><strong>Model Response:</strong> ${escapeHtml(data.generation_info.generated_text)}</p>
+                    </div>
+                    ${stepByStepHTML}
+                `;
+                document.querySelector('.main-content').insertBefore(genInfo, document.getElementById('videoCard'));
+            }
+
+            // video
+            currentVideoUrl = data.video_url;
+            const video = document.getElementById('attentionVideo');
+            video.src = data.video_url;
+
+            // tokens
+            const tokenDisplay = document.getElementById('tokenDisplay');
+            tokenDisplay.innerHTML = data.token_analysis.map(t => {
+                const className = t.importance >= 0.6 ? 'high-importance' : 
+                                 t.importance >= 0.3 ? 'medium-importance' : 'low-importance';
+                return `<span class="token ${className}" title="Importance: ${t.importance.toFixed(3)}">${escapeHtml(t.token)}</span>`;
+            }).join('');
+
+            // drift
+            const driftDisplay = document.getElementById('driftDisplay');
+            driftDisplay.innerHTML = `
+                <div class="stat-box">
+                    <span class="stat-value">${data.drift_analysis.average_drift.toFixed(3)}</span>
+                    <span class="stat-label">Average Drift</span>
+                </div>
+                <p style="margin-top: 15px; color: #b0b0b0;">${data.drift_analysis.interpretation}</p>
+            `;
+
+            // stats
+            const statsDisplay = document.getElementById('statsDisplay');
+            statsDisplay.innerHTML = `
+                <div class="stat-box">
+                    <span class="stat-value">${data.attention_stats.length}</span>
+                    <span class="stat-label">Layers</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value">${data.hallucination_analysis.average_entropy.toFixed(2)}</span>
+                    <span class="stat-label">Avg Entropy</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value">${data.drift_analysis.average_drift.toFixed(3)}</span>
+                    <span class="stat-label">Avg Drift</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value">${data.tokens.length}</span>
+                    <span class="stat-label">Tokens</span>
+                </div>
+            `;
+
+            // risk
+            const riskDisplay = document.getElementById('riskDisplay');
+            const riskClass = data.hallucination_analysis.risk_level.toLowerCase();
+            riskDisplay.innerHTML = `
+                <div class="risk-badge ${riskClass}">
+                    Risk Level: ${data.hallucination_analysis.risk_level}
+                </div>
+                <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p style="margin-bottom: 15px; color: #b0b0b0;">${data.hallucination_analysis.interpretation}</p>
+                    <p style="font-weight: 600; margin-bottom: 10px; color: #e0e0e0;">Detailed Metrics:</p>
+                    <ul style="color: #b0b0b0; list-style-position: inside;">
+                        <li>Entropy: ${data.hallucination_analysis.detailed_analysis.entropy}</li>
+                        <li>Drift: ${data.hallucination_analysis.detailed_analysis.drift}</li>
+                        <li>Token Quality: ${data.hallucination_analysis.detailed_analysis.token_quality}</li>
+                    </ul>
+                </div>
+            `;
+
+            // summary
+            const summaryDisplay = document.getElementById('summaryDisplay');
+            summaryDisplay.innerHTML = `
+                <div class="report-section">
+                    <h3>Model Analysis</h3>
+                    <p style="color: #b0b0b0;"><strong>Model:</strong> ${data.summary_report.model}</p>
+                    <p style="color: #b0b0b0;"><strong>Total Tokens:</strong> ${data.summary_report.summary.total_tokens}</p>
+                    <p style="color: #b0b0b0;"><strong>Total Layers:</strong> ${data.summary_report.summary.total_layers}</p>
+                    <p style="color: #b0b0b0;"><strong>Overall Risk:</strong> <span class="risk-badge ${data.summary_report.summary.overall_risk.toLowerCase()}">${data.summary_report.summary.overall_risk}</span></p>
+                </div>
+
+                <div class="report-section" style="border-left-color: #ffb74d;">
+                    <h3>⚠️ Potentially Problematic Tokens</h3>
+                    <ul>
+                        ${data.summary_report.problematic_tokens.map(t => `<li>${t}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="report-section" style="border-left-color: #8bc34a;">
+                    <h3>✓ Most Influential Tokens</h3>
+                    <ul>
+                        ${data.summary_report.most_influential_tokens.map(t => `<li>${t}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="report-section" style="border-left-color: #4a9eff;">
+                    <h3>💡 Recommendations</h3>
+                    <ul>
+                        ${data.summary_report.recommendations.map(r => `<li>${r}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (currentVideoUrl) {
+                const link = document.createElement('a');
+                link.href = currentVideoUrl;
+                link.download = 'attention_visualization.mp4';
+                link.click();
+            }
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
