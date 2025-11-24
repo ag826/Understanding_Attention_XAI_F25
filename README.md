@@ -85,6 +85,8 @@ That's it. Render will install FFmpeg automatically using `apt-packages.txt`.
 
 **Note:** The free tier spins down after inactivity. First request after idle might take 30-60 seconds to wake up.
 
+**Live Demo also available on:** https://huggingface.co/spaces/YOURUSERNAME/xai-attention-visualizer
+
 ## How It Works
 
 ### The Core Idea
@@ -131,7 +133,8 @@ The attention analysis framework we've built (token-by-token tracking, multi-fac
 
 ```
 .
-├── app.py                  # Flask backend, main logic
+├── app.py                  # Flask backend, main logic, original version
+├── app_gradio.py           # Gradio specific version just for huggingface deployment
 ├── templates/
 │   └── index.html         # Frontend UI
 ├── requirements.txt       # Python dependencies
