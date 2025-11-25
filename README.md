@@ -199,7 +199,7 @@ This project directly applies concepts from AIPI 590.01:
 **Novel Component:** Token-by-token attention tracking during generation. Most XAI tools analyze static inputs. We track attention dynamically as the model generates each token, providing a framework for real-time analysis. While small models produce noisy signals, this methodology demonstrates an approach that could be more effective with larger, better-calibrated models.
 
 AI Citation:
-- ChatGPT and Claude were used to generate initial code structure and framework in app.py
+- ChatGPT 5.1 and Claude Sonnet 4.5 were used to generate initial code structure and framework in app.py
 - But not more than 5 lines at a time 
 - Most of the code and logic was manually written 
 - AI Citation - ChatGPT and Claude were used to help debug and optimize code snippets in app.py
